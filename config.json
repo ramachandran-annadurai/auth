@@ -1,0 +1,25 @@
+{
+  "database": {
+    "database_name": "patients_db",
+    "collections": {
+      "patients": "patients_v2",
+      "doctors": "doctor_v2",
+      "pending_users": "pending_users",
+      "otp_codes": "otp_codes",
+      "user_sessions": "user_sessions"
+    }
+  },
+  "jwt": {
+    "algorithm": "HS256",
+    "expire_minutes": 30
+  },
+  "email": {
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587
+  },
+  "service": {
+    "port": 5001,
+    "host": "0.0.0.0",
+    "debug": false
+  }
+}

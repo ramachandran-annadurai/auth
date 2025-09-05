@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Patient & Doctor Auth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card.patients {
+            border-left-color: #00b894;
+        }
+        
+        .stat-card.doctors {
+            border-left-color: #0984e3;
+        }
+        
+        .stat-card.pending {
+            border-left-color: #fdcb6e;
+        }
+        
+        .stat-card.sessions {
+            border-left-color: #6c5ce7;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .pending-users {
+            margin-top: 30px;
+        }
+        
+        .pending-user {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #fdcb6e;
+        }
+        
+        .pending-user.expired {
+            border-left-color: #e17055;
+            background: #fff5f5;
+        }
+        
+        .pending-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .pending-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .pending-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .response.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-input {
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👨‍💼 Admin Dashboard</h1>
+            <p>Monitor pending registrations and system status</p>
+            <p id="last-updated">Last updated: Loading...</p>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card patients">
+                <div class="stat-number" id="patients-count">-</div>
+                <div class="stat-label">Verified Patients</div>
+            </div>
+            
+            <div class="stat-card doctors">
+                <div class="stat-number" id="doctors-count">-</div>
+                <div class="stat-label">Verified Doctors</div>
+            </div>
+            
+            <div class="stat-card pending">
+                <div class="stat-number" id="pending-count">-</div>
+                <div class="stat-label">Pending Registrations</div>
+            </div>
+            
+            <div class="stat-card sessions">
+                <div class="stat-number" id="sessions-count">-</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn btn-primary" onclick="loadCollectionsStatus()">🔄 Refresh Stats</button>
+            <button class="btn btn-success" onclick="loadPendingUsers()">👥 Load Pending Users</button>
+            <button class="btn btn-warning" onclick="loadPendingUsers(true)">⏰ Include Expired</button>
+            <button class="btn btn-danger" onclick="cleanupExpired()">🗑️ Cleanup Expired</button>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters">
+            <input type="text" class="filter-input" id="email-filter" placeholder="Filter by email">
+            <select class="filter-input" id="type-filter">
+                <option value="">All User Types</option>
+                <option value="patient">Patients</option>
+                <option value="doctor">Doctors</option>
+            </select>
+            <button class="btn btn-primary" onclick="filterPendingUsers()">🔍 Filter</button>
+        </div>
+        
+        <!-- Pending Users Section -->
+        <div class="pending-users">
+            <h3>Pending User Registrations</h3>
+            <div id="pending-users-list">
+                <p>Click "Load Pending Users" to view pending registrations.</p>
+            </div>
+        </div>
+        
+        <div id="response" class="response" style="display: none;"></div>
+        
+        <div class="links">
+            <a href="index.html">🔙 Back to Auth</a>
+            <a href="sessions.html">🎫 Sessions</a>
+            <a href="otp.html">📧 OTP Verification</a>
+            <a href="http://localhost:5001/docs" target="_blank">📚 API Docs</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001';
+
+        // Load collections status
+        async function loadCollectionsStatus() {
+            showResponse('Loading collections status...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/collections-status`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Update stats cards
+                    document.getElementById('patients-count').textContent = result.collections.patients_v2.count;
+                    document.getElementById('doctors-count').textContent = result.collections.doctors_v2.count;
+                    document.getElementById('pending-count').textContent = 
+                        `${result.collections.pending_users.active_count}/${result.collections.pending_users.total_count}`;
+                    document.getElementById('sessions-count').textContent = result.collections.user_sessions.count;
+                    
+                    document.getElementById('last-updated').textContent = 
+                        `Last updated: ${new Date(result.timestamp).toLocaleString()}`;
+                    
+                    showResponse(`✅ Stats Updated!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    showResponse(`❌ Failed to load stats:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Load pending users
+        async function loadPendingUsers(includeExpired = false) {
+            showResponse('Loading pending users...', 'info');
+            
+            try {
+                const params = new URLSearchParams();
+                if (includeExpired) params.append('include_expired', 'true');
+                
+                const response = await fetch(`${API_BASE}/admin/pending-users?${params}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayPendingUsers(result.pending_users);
+                    showResponse(
+                        `✅ Loaded ${result.total_count} pending registrations\n` +
+                        `Active: ${result.active_count}, Expired: ${result.expired_count}`,
+                        'success'
+                    );
+                } else {
+                    showResponse(`❌ Failed to load pending users:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Filter pending users
+        async function filterPendingUsers() {
+            const email = document.getElementById('email-filter').value;
+            const userType = document.getElementById('type-filter').value;
+            
+            showResponse('Filtering pending users...', 'info');
+            
+            try {
+                const params = new URLSearchParams();
+                if (email) params.append('email', email);
+                if (userType) params.append('user_type', userType);
+                
+                const response = await fetch(`${API_BASE}/admin/pending-users?${params}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayPendingUsers(result.pending_users);
+                    showResponse(`✅ Filter applied: ${result.total_count} results`, 'success');
+                } else {
+                    showResponse(`❌ Filter failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Display pending users
+        function displayPendingUsers(users) {
+            const container = document.getElementById('pending-users-list');
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p>No pending registrations found.</p>';
+                return;
+            }
+            
+            container.innerHTML = users.map(user => {
+                const statusClass = user.status === 'expired' ? 'expired' : '';
+                const statusIcon = user.status === 'expired' ? '⏰' : '⏳';
+                const timeInfo = user.time_remaining ? `⏱️ ${user.time_remaining} remaining` : '⏰ Expired';
+                
+                return `
+                    <div class="pending-user ${statusClass}">
+                        <div class="pending-header">
+                            <h4>${statusIcon} ${user.user_id} - ${user.first_name} ${user.last_name}</h4>
+                            <span style="font-weight: bold; color: ${user.status === 'expired' ? '#e17055' : '#fdcb6e'}">
+                                ${user.status.toUpperCase()}
+                            </span>
+                        </div>
+                        
+                        <div class="pending-info">
+                            <span><strong>Email:</strong> ${user.email}</span>
+                            <span><strong>Username:</strong> ${user.username}</span>
+                            <span><strong>User Type:</strong> ${user.user_type}</span>
+                            <span><strong>Mobile:</strong> ${user.mobile}</span>
+                            <span><strong>Created:</strong> ${new Date(user.created_at).toLocaleString()}</span>
+                            <span><strong>Expires:</strong> ${new Date(user.expires_at).toLocaleString()}</span>
+                            ${user.user_type === 'patient' ? `<span><strong>Pregnant:</strong> ${user.is_pregnant ? 'Yes' : 'No'}</span>` : ''}
+                            ${user.user_type === 'doctor' ? `<span><strong>Specialization:</strong> ${user.specialization || 'Not specified'}</span>` : ''}
+                            <span><strong>Status:</strong> ${timeInfo}</span>
+                        </div>
+                        
+                        <div class="pending-actions">
+                            <button class="btn btn-success" onclick="resendOTP('${user.user_id}')" ${user.status === 'expired' ? 'disabled' : ''}>
+                                📧 Resend OTP
+                            </button>
+                            <button class="btn btn-danger" onclick="deletePendingUser('${user.user_id}')">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Resend OTP for pending user
+        async function resendOTP(userId) {
+            if (!confirm(`Resend OTP for user ${userId}?`)) return;
+            
+            showResponse(`Resending OTP for ${userId}...`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/pending-users/${userId}/resend-otp`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse(`✅ OTP resent to ${result.email}`, 'success');
+                } else {
+                    showResponse(`❌ Failed to resend OTP:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Delete pending user
+        async function deletePendingUser(userId) {
+            if (!confirm(`Delete pending registration for ${userId}? This action cannot be undone.`)) return;
+            
+            showResponse(`Deleting pending user ${userId}...`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/pending-users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse(`✅ ${result.message}`, 'success');
+                    
+                    // Reload pending users
+                    setTimeout(() => {
+                        loadPendingUsers();
+                    }, 1000);
+                } else {
+                    showResponse(`❌ Failed to delete:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Cleanup expired registrations
+        async function cleanupExpired() {
+            if (!confirm('Delete all expired pending registrations? This action cannot be undone.')) return;
+            
+            showResponse('Cleaning up expired registrations...', 'info');
+            
+            // This would need a specific endpoint - for now just reload
+            showResponse('⚠️ Cleanup endpoint not implemented yet. Use individual delete buttons.', 'error');
+        }
+
+        // Show response
+        function showResponse(message, type) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = message;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    responseDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize
+        loadCollectionsStatus();
+    </script>
+</body>
+</html>

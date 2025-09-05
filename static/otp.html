@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification - Patient & Doctor Auth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .form-container {
+            display: none;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            margin-top: 10px;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 OTP Verification</h1>
+            <p>Verify your email and reset passwords</p>
+        </div>
+        
+        <div class="tab-container">
+            <button class="tab active" onclick="switchTab('verify')">Verify OTP</button>
+            <button class="tab" onclick="switchTab('generate')">Generate OTP</button>
+            <button class="tab" onclick="switchTab('reset')">Reset Password</button>
+        </div>
+        
+        <!-- Verify OTP Form -->
+        <div id="verify-form" class="form-container active">
+            <form onsubmit="verifyOTP(event)">
+                <div class="form-group">
+                    <label for="verify-email">Email</label>
+                    <input type="email" id="verify-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="verify-otp">OTP Code</label>
+                    <input type="text" id="verify-otp" name="otp" placeholder="Enter 6-digit OTP" maxlength="6" required>
+                </div>
+                
+                <button type="submit" class="btn">✅ Verify OTP</button>
+            </form>
+            
+            <div id="verify-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <!-- Generate OTP Form -->
+        <div id="generate-form" class="form-container">
+            <form onsubmit="generateOTP(event)">
+                <div class="form-group">
+                    <label for="generate-email">Email</label>
+                    <input type="email" id="generate-email" name="email" required>
+                </div>
+                
+                <button type="submit" class="btn">📧 Send OTP</button>
+            </form>
+            
+            <div id="generate-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <!-- Reset Password Form -->
+        <div id="reset-form" class="form-container">
+            <form onsubmit="resetPassword(event)">
+                <div class="form-group">
+                    <label for="reset-email">Email</label>
+                    <input type="email" id="reset-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reset-otp">OTP Code</label>
+                    <input type="text" id="reset-otp" name="otp" placeholder="Enter 6-digit OTP" maxlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reset-password">New Password</label>
+                    <input type="password" id="reset-password" name="new_password" required>
+                </div>
+                
+                <button type="submit" class="btn">🔑 Reset Password</button>
+                <button type="button" class="btn btn-secondary" onclick="requestPasswordReset()">📧 Request Password Reset OTP</button>
+            </form>
+            
+            <div id="reset-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="links">
+            <a href="index.html">🔙 Back to Login</a>
+            <a href="sessions.html">🎫 Sessions</a>
+            <a href="http://localhost:5001/docs" target="_blank">📚 API Docs</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001';
+
+        // Switch between tabs
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update forms
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+            document.getElementById(`${tab}-form`).classList.add('active');
+        }
+
+        // Verify OTP
+        async function verifyOTP(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showResponse('verify', 'Verifying OTP...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('verify', `✅ OTP Verified Successfully!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // Clear form
+                    event.target.reset();
+                } else {
+                    showResponse('verify', `❌ OTP Verification Failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('verify', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Generate OTP
+        async function generateOTP(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showResponse('generate', 'Sending OTP...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/generate-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('generate', `✅ OTP Sent Successfully!\n\n📧 Check your email: ${data.email}\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // Clear form
+                    event.target.reset();
+                } else {
+                    showResponse('generate', `❌ Failed to Send OTP:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('generate', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Request password reset OTP
+        async function requestPasswordReset() {
+            const email = document.getElementById('reset-email').value;
+            
+            if (!email) {
+                showResponse('reset', '❌ Please enter your email first.', 'error');
+                return;
+            }
+            
+            showResponse('reset', 'Sending password reset OTP...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('reset', `✅ Password Reset OTP Sent!\n\n📧 Check your email: ${email}\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    showResponse('reset', `❌ Failed to Send Password Reset OTP:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('reset', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Reset password
+        async function resetPassword(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showResponse('reset', 'Resetting password...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('reset', `✅ Password Reset Successfully!\n\n🔑 You can now login with your new password.\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // Clear form
+                    event.target.reset();
+                    
+                    // Suggest going to login page
+                    setTimeout(() => {
+                        if (confirm('Password reset successful! Go to login page?')) {
+                            window.location.href = 'index.html';
+                        }
+                    }, 2000);
+                } else {
+                    showResponse('reset', `❌ Password Reset Failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('reset', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Show response
+        function showResponse(form, message, type) {
+            const responseDiv = document.getElementById(`${form}-response`);
+            responseDiv.textContent = message;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

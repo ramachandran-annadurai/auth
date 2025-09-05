@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient & Doctor Auth - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .form-container {
+            display: none;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            margin-top: 10px;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .user-type-fields {
+            display: none;
+        }
+        
+        .user-type-fields.show {
+            display: block;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.online {
+            background: #28a745;
+        }
+        
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Auth Service</h1>
+            <p>Patient & Doctor Authentication Testing</p>
+            <p><span class="status-indicator" id="serviceStatus"></span><span id="statusText">Checking service...</span></p>
+        </div>
+        
+        <div class="tab-container">
+            <button class="tab active" onclick="switchTab('signup')">Sign Up</button>
+            <button class="tab" onclick="switchTab('login')">Login</button>
+        </div>
+        
+        <!-- Signup Form -->
+        <div id="signup-form" class="form-container active">
+            <form onsubmit="signup(event)">
+                <div class="form-group">
+                    <label for="signup-usertype">User Type</label>
+                    <select id="signup-usertype" name="user_type" onchange="toggleUserTypeFields('signup')" required>
+                        <option value="patient">👤 Patient</option>
+                        <option value="doctor">👨‍⚕️ Doctor</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-username">Username</label>
+                    <input type="text" id="signup-username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-mobile">Mobile</label>
+                    <input type="tel" id="signup-mobile" name="mobile" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-firstname">First Name</label>
+                    <input type="text" id="signup-firstname" name="first_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-lastname">Last Name</label>
+                    <input type="text" id="signup-lastname" name="last_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" name="password" required>
+                </div>
+                
+                <!-- Patient-specific fields -->
+                <div id="signup-patient-fields" class="user-type-fields show">
+                    <div class="form-group">
+                        <label for="signup-pregnant">Are you pregnant?</label>
+                        <select id="signup-pregnant" name="is_pregnant">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Doctor-specific fields -->
+                <div id="signup-doctor-fields" class="user-type-fields">
+                    <div class="form-group">
+                        <label for="signup-specialization">Specialization</label>
+                        <input type="text" id="signup-specialization" name="specialization" placeholder="e.g., Cardiology, Pediatrics">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" id="signup-btn">🚀 Sign Up</button>
+            </form>
+            
+            <!-- OTP Verification Section (hidden initially) -->
+            <div id="otp-section" style="display: none; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e5e9;">
+                <h3 style="color: #333; margin-bottom: 20px;">📧 Verify OTP to Complete Registration</h3>
+                <form onsubmit="verifyRegistrationOTP(event)">
+                    <div class="form-group">
+                        <label for="signup-otp-email">Email (auto-filled)</label>
+                        <input type="email" id="signup-otp-email" name="email" readonly style="background: #f8f9fa;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signup-otp-code">Enter OTP Code</label>
+                        <input type="text" id="signup-otp-code" name="otp" placeholder="Enter 6-digit code" maxlength="6" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">✅ Verify OTP & Create Account</button>
+                    <button type="button" class="btn btn-secondary" onclick="resendOTP()">📧 Resend OTP</button>
+                </form>
+                
+                <div id="otp-verification-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div id="signup-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="login-form" class="form-container">
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label for="login-username">Username / Email / Patient ID / Doctor ID</label>
+                    <input type="text" id="login-username" name="username" placeholder="john_doe or PAT12345678 or DOC87654321" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn">🔑 Login</button>
+            </form>
+            
+            <div id="login-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="links">
+            <a href="http://localhost:5001/docs" target="_blank">📚 API Docs</a>
+            <a href="http://localhost:5001/health" target="_blank">🔍 Health Check</a>
+            <a href="sessions.html">🎫 Sessions</a>
+            <a href="static/admin.html">👨‍💼 Admin Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001';
+        let authToken = localStorage.getItem('authToken');
+        let userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+
+        // Check service status
+        async function checkServiceStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    document.getElementById('serviceStatus').className = 'status-indicator online';
+                    document.getElementById('statusText').textContent = 'Service Online';
+                } else {
+                    throw new Error('Service not responding');
+                }
+            } catch (error) {
+                document.getElementById('serviceStatus').className = 'status-indicator offline';
+                document.getElementById('statusText').textContent = 'Service Offline';
+            }
+        }
+
+        // Switch between signup and login tabs
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Find the correct tab button to activate
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(button => {
+                if ((tab === 'signup' && button.textContent.includes('Sign Up')) ||
+                    (tab === 'login' && button.textContent.includes('Login'))) {
+                    button.classList.add('active');
+                }
+            });
+            
+            // Update forms
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+            document.getElementById(`${tab}-form`).classList.add('active');
+        }
+
+        // Toggle user type specific fields
+        function toggleUserTypeFields(form) {
+            const userType = document.getElementById(`${form}-usertype`).value;
+            const patientFields = document.getElementById(`${form}-patient-fields`);
+            const doctorFields = document.getElementById(`${form}-doctor-fields`);
+            
+            if (userType === 'patient') {
+                patientFields.classList.add('show');
+                doctorFields.classList.remove('show');
+            } else {
+                patientFields.classList.remove('show');
+                doctorFields.classList.add('show');
+            }
+        }
+
+        // Signup function
+        async function signup(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert boolean string to boolean
+            if (data.is_pregnant) {
+                data.is_pregnant = data.is_pregnant === 'true';
+            }
+            
+            // Remove empty specialization for patients
+            if (data.user_type === 'patient') {
+                delete data.specialization;
+            } else {
+                delete data.is_pregnant;
+            }
+            
+            showResponse('signup', 'Registering...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success message with pending status
+                    if (result.user_id) {
+                        showResponse('signup', 
+                            `✅ Registration Initiated!\n\n` +
+                            `🆔 Your ${data.user_type.toUpperCase()} ID: ${result.user_id}\n\n` +
+                            `⚠️ Status: ${result.status}\n` +
+                            `⏰ Expires in: ${result.expires_in_minutes} minutes\n\n` +
+                            `📧 OTP sent to your email!\n` +
+                            `🔑 Enter OTP below to create your account.\n\n` +
+                            `Full Response:\n${JSON.stringify(result, null, 2)}`, 
+                            'success'
+                        );
+                        
+                        // Show OTP verification section
+                        document.getElementById('otp-section').style.display = 'block';
+                        document.getElementById('signup-otp-email').value = data.email;
+                        
+                        // Disable signup form
+                        document.getElementById('signup-btn').disabled = true;
+                        document.getElementById('signup-btn').textContent = '📧 OTP Sent - Check Email';
+                        
+                        // Focus on OTP input
+                        setTimeout(() => {
+                            document.getElementById('signup-otp-code').focus();
+                        }, 500);
+                    }
+                } else {
+                    showResponse('signup', `❌ Error:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('signup', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Login function
+        async function login(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showResponse('login', 'Logging in...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Store auth token and user info
+                    authToken = result.access_token;
+                    userInfo = {
+                        user_id: result.user_id,
+                        user_type: result.user_type,
+                        session_id: result.session_id
+                    };
+                    
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    
+                    showResponse('login', 
+                        `✅ Login Successful!\n\n` +
+                        `👤 User ID: ${result.user_id}\n` +
+                        `🎭 User Type: ${result.user_type}\n` +
+                        `🎫 Session ID: ${result.session_id}\n` +
+                        `🔑 Token: ${result.access_token.substring(0, 50)}...\n\n` +
+                        `Full Response:\n${JSON.stringify(result, null, 2)}`, 
+                        'success'
+                    );
+                    
+                    // Clear form
+                    event.target.reset();
+                } else {
+                    showResponse('login', `❌ Error:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse('login', `❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Verify registration OTP
+        async function verifyRegistrationOTP(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showOTPResponse('Verifying OTP...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showOTPResponse(
+                        `🎉 Account Created Successfully!\n\n` +
+                        `🆔 User ID: ${result.user_id}\n` +
+                        `🎭 User Type: ${result.user_type}\n` +
+                        `✅ Status: ${result.status}\n\n` +
+                        `You can now login with your credentials!\n\n` +
+                        `Full Response:\n${JSON.stringify(result, null, 2)}`, 
+                        'success'
+                    );
+                    
+                    // Clear forms and reset
+                    document.querySelector('#signup-form form').reset();
+                    event.target.reset();
+                    
+                    // Hide OTP section and reset signup button
+                    setTimeout(() => {
+                        document.getElementById('otp-section').style.display = 'none';
+                        document.getElementById('signup-btn').disabled = false;
+                        document.getElementById('signup-btn').textContent = '🚀 Sign Up';
+                        
+                        // Switch to login tab
+                        if (confirm('Account created successfully! Switch to login?')) {
+                            switchTab('login');
+                        }
+                    }, 3000);
+                    
+                } else {
+                    showOTPResponse(`❌ OTP Verification Failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showOTPResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Resend OTP
+        async function resendOTP() {
+            const email = document.getElementById('signup-otp-email').value;
+            
+            if (!email) {
+                showOTPResponse('❌ Email not found. Please start registration again.', 'error');
+                return;
+            }
+            
+            showOTPResponse('📧 Resending OTP...', 'success');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/generate-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showOTPResponse(`✅ OTP Resent!\n\nCheck your email: ${email}`, 'success');
+                    
+                    // Clear OTP input and focus
+                    document.getElementById('signup-otp-code').value = '';
+                    document.getElementById('signup-otp-code').focus();
+                } else {
+                    showOTPResponse(`❌ Failed to Resend OTP:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showOTPResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Show OTP response
+        function showOTPResponse(message, type) {
+            const responseDiv = document.getElementById('otp-verification-response');
+            responseDiv.textContent = message;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+        }
+
+        // Show response
+        function showResponse(form, message, type) {
+            const responseDiv = document.getElementById(`${form}-response`);
+            responseDiv.textContent = message;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+        }
+
+        // Initialize
+        checkServiceStatus();
+        
+        // Check service status every 30 seconds
+        setInterval(checkServiceStatus, 30000);
+    </script>
+</body>
+</html>

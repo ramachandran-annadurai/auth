@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Management - Patient & Doctor Auth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .user-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .sessions-container {
+            margin-top: 30px;
+        }
+        
+        .session-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .session-card.current {
+            border-left-color: #00b894;
+            background: #e8f5e8;
+        }
+        
+        .session-card h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .session-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .session-info span {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .session-info strong {
+            color: #333;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .response.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .no-auth {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .no-auth h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Session Management</h1>
+            <p>Manage your active authentication sessions</p>
+        </div>
+        
+        <div id="auth-content" style="display: none;">
+            <div class="user-info">
+                <h3>👤 Current User</h3>
+                <p><strong>User ID:</strong> <span id="current-user-id">-</span></p>
+                <p><strong>User Type:</strong> <span id="current-user-type">-</span></p>
+                <p><strong>Session ID:</strong> <span id="current-session-id">-</span></p>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-primary" onclick="validateToken()">🔍 Validate Token</button>
+                <button class="btn btn-success" onclick="loadSessions()">🔄 Refresh Sessions</button>
+                <button class="btn btn-danger" onclick="logout()">🚪 Logout Current Session</button>
+                <button class="btn btn-danger" onclick="logoutAll()">🚫 Logout All Sessions</button>
+            </div>
+            
+            <div class="sessions-container">
+                <h3>Active Sessions</h3>
+                <div id="sessions-list">
+                    <p>Click "Refresh Sessions" to load your active sessions...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="no-auth" class="no-auth">
+            <h3>🔐 Not Authenticated</h3>
+            <p>You need to login first to manage sessions.</p>
+            <br>
+            <a href="index.html" class="btn btn-primary">🔑 Go to Login</a>
+        </div>
+        
+        <div id="response" class="response" style="display: none;"></div>
+        
+        <div class="links">
+            <a href="index.html">🔙 Back to Login</a>
+            <a href="http://localhost:5001/docs" target="_blank">📚 API Docs</a>
+            <a href="http://localhost:5001/health" target="_blank">🔍 Health Check</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001';
+        let authToken = localStorage.getItem('authToken');
+        let userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+
+        // Initialize page
+        function init() {
+            if (authToken && userInfo.user_id) {
+                document.getElementById('auth-content').style.display = 'block';
+                document.getElementById('no-auth').style.display = 'none';
+                
+                document.getElementById('current-user-id').textContent = userInfo.user_id;
+                document.getElementById('current-user-type').textContent = userInfo.user_type;
+                document.getElementById('current-session-id').textContent = userInfo.session_id || 'Unknown';
+                
+                // Auto-load sessions
+                loadSessions();
+            } else {
+                document.getElementById('auth-content').style.display = 'none';
+                document.getElementById('no-auth').style.display = 'block';
+            }
+        }
+
+        // Validate current token
+        async function validateToken() {
+            if (!authToken) {
+                showResponse('❌ No token found. Please login first.', 'error');
+                return;
+            }
+            
+            showResponse('🔍 Validating token...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/validate-token?token=${encodeURIComponent(authToken)}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse(`✅ Token Valid!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    showResponse(`❌ Token Invalid:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                    // Clear invalid token
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                    location.reload();
+                }
+            } catch (error) {
+                showResponse(`❌ Validation Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Load user sessions
+        async function loadSessions() {
+            if (!authToken) {
+                showResponse('❌ No token found. Please login first.', 'error');
+                return;
+            }
+            
+            showResponse('🔄 Loading sessions...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/sessions`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displaySessions(result.sessions);
+                    showResponse(`✅ Sessions loaded: ${result.count} active sessions`, 'success');
+                } else {
+                    showResponse(`❌ Failed to load sessions:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Network Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Display sessions
+        function displaySessions(sessions) {
+            const container = document.getElementById('sessions-list');
+            
+            if (!sessions || sessions.length === 0) {
+                container.innerHTML = '<p>No active sessions found.</p>';
+                return;
+            }
+            
+            container.innerHTML = sessions.map((session, index) => {
+                const isCurrentSession = session.session_id === userInfo.session_id;
+                const loginTime = new Date(session.login_time).toLocaleString();
+                const lastActivity = new Date(session.last_activity).toLocaleString();
+                const expiresAt = new Date(session.expires_at).toLocaleString();
+                
+                return `
+                    <div class="session-card ${isCurrentSession ? 'current' : ''}">
+                        <h4>${isCurrentSession ? '🟢 Current Session' : '📱 Session'} #${index + 1}</h4>
+                        <div class="session-info">
+                            <span><strong>Session ID:</strong> ${session.session_id}</span>
+                            <span><strong>User ID:</strong> ${session.user_id}</span>
+                            <span><strong>User Type:</strong> ${session.user_type}</span>
+                            <span><strong>Status:</strong> ${session.is_active ? '🟢 Active' : '🔴 Inactive'}</span>
+                            <span><strong>Login Time:</strong> ${loginTime}</span>
+                            <span><strong>Last Activity:</strong> ${lastActivity}</span>
+                            <span><strong>Expires At:</strong> ${expiresAt}</span>
+                        </div>
+                        ${isCurrentSession ? '<p><strong>🎯 This is your current session</strong></p>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Logout current session
+        async function logout() {
+            if (!authToken) {
+                showResponse('❌ No token found. Please login first.', 'error');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to logout from the current session?')) {
+                return;
+            }
+            
+            showResponse('🚪 Logging out...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse(`✅ Logout Successful!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // Clear local storage
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                    
+                    // Redirect to login after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showResponse(`❌ Logout Failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Logout Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Logout all sessions
+        async function logoutAll() {
+            if (!authToken) {
+                showResponse('❌ No token found. Please login first.', 'error');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to logout from ALL sessions? This will sign you out everywhere.')) {
+                return;
+            }
+            
+            showResponse('🚫 Logging out from all sessions...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/logout-all`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse(`✅ All Sessions Logged Out!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // Clear local storage
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                    
+                    // Redirect to login after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showResponse(`❌ Logout All Failed:\n\n${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResponse(`❌ Logout All Error:\n\n${error.message}`, 'error');
+            }
+        }
+
+        // Show response
+        function showResponse(message, type) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = message;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    responseDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize page
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment files (NEVER COMMIT THESE)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Python virtual environments
+.venv
+env/
+venv/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+
+# OS files
+.DS_Store
+*.log
+
+# Deployment files (commit env.txt for deployment reference)
+# .env files are ignored but env.txt is tracked for deployment
