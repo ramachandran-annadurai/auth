@@ -1,22 +1,70 @@
 import pymongo
+from urllib.parse import quote_plus
 from app.utils.config import settings
 
 _client = None
 _database = None
+
+def _encode_mongo_uri(uri: str) -> str:
+    """
+    Properly encode MongoDB URI to handle special characters in username/password.
+    This is required for RFC 3986 compliance.
+    """
+    try:
+        # If the URI already contains encoded characters, return as is
+        if '%' in uri and ('@' not in uri or uri.count('@') == 1):
+            return uri
+        
+        # Parse the URI to extract components
+        if '://' not in uri:
+            return uri
+            
+        protocol, rest = uri.split('://', 1)
+        
+        # Check if there's authentication info
+        if '@' in rest:
+            auth_part, host_part = rest.split('@', 1)
+            
+            # Check if auth part contains username:password
+            if ':' in auth_part:
+                username, password = auth_part.split(':', 1)
+                # URL encode the username and password
+                encoded_username = quote_plus(username)
+                encoded_password = quote_plus(password)
+                encoded_auth = f"{encoded_username}:{encoded_password}"
+            else:
+                # Only username provided
+                encoded_auth = quote_plus(auth_part)
+            
+            return f"{protocol}://{encoded_auth}@{host_part}"
+        else:
+            # No authentication, return as is
+            return uri
+            
+    except Exception as e:
+        # If encoding fails, return original URI and let pymongo handle the error
+        print(f"Warning: Failed to encode MongoDB URI: {e}")
+        return uri
 
 def get_database():
     global _client, _database
     
     if _database is None:
         try:
-            _client = pymongo.MongoClient(settings.mongo_uri)
+            # Encode the MongoDB URI to handle special characters
+            encoded_uri = _encode_mongo_uri(settings.mongo_uri)
+            _client = pymongo.MongoClient(encoded_uri)
             _database = _client[settings.database_name]
             
             # Create indexes safely (skip if already exists with different options)
             _create_indexes_safely(_database)
             
         except Exception as e:
-            raise Exception(f"Database connection failed: {str(e)}")
+            error_msg = f"Database connection failed: {str(e)}"
+            print(f"❌ {error_msg}")
+            print(f"🔍 MongoDB URI (first 50 chars): {settings.mongo_uri[:50]}...")
+            print(f"🔍 Encoded URI (first 50 chars): {encoded_uri[:50]}...")
+            raise Exception(error_msg)
     
     return _database
 

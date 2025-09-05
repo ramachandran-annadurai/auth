@@ -82,10 +82,35 @@ gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:5001
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017` |
+| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017` or `mongodb+srv://username:password@cluster.mongodb.net/dbname` |
 | `JWT_SECRET` | JWT signing secret (MUST be secure) | `super-secret-random-string-12345` |
 | `SMTP_USER` | Gmail username for sending emails | `your-email@gmail.com` |
 | `SMTP_PASSWORD` | Gmail app password | `your-gmail-app-password` |
+
+### MongoDB URI Encoding
+
+If your MongoDB URI contains special characters in the username or password, they need to be URL-encoded:
+
+**Special characters that need encoding:**
+- `@` → `%40`
+- `:` → `%3A`
+- `/` → `%2F`
+- `+` → `%2B`
+- `#` → `%23`
+- `?` → `%3F`
+- `&` → `%26`
+- `=` → `%3D`
+
+**Example:**
+```
+# Original URI with special characters
+mongodb+srv://user:pass@word@cluster.mongodb.net/dbname
+
+# Properly encoded URI
+mongodb+srv://user:pass%40word@cluster.mongodb.net/dbname
+```
+
+**Note:** The application automatically handles URI encoding, but it's better to use properly encoded URIs from the start.
 
 ## Security Checklist
 
@@ -120,6 +145,7 @@ curl -X POST http://your-domain:5001/auth/register \
 4. **Port conflicts** - Check if port 5001 is available
 5. **Rust/Cargo build errors** - Fixed by removing cryptography dependency and using bcrypt directly
 6. **Metadata generation failed** - Fixed with pyproject.toml configuration
+7. **MongoDB URI encoding errors** - Special characters in username/password need URL encoding
 
 ### Logs:
 - Check application logs for detailed error messages
