@@ -48,13 +48,17 @@ gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:5001
 
 ### **Render**
 1. Connect your GitHub repository
-2. Set build command: `pip install -r requirements.txt`
-3. Set start command: `python start.py`
+2. Render will automatically detect the `render.yaml` configuration
+3. If manual setup is needed:
+   - Set build command: `pip install -r requirements.txt`
+   - Set start command: `python start.py`
+   - Set Python version: `3.11.0`
 4. Add environment variables in Render dashboard:
    - `MONGO_URI`
    - `JWT_SECRET`
    - `SMTP_USER`
    - `SMTP_PASSWORD`
+5. Health check endpoint: `/health`
 
 ### **Railway**
 1. Connect GitHub repository
@@ -114,6 +118,8 @@ curl -X POST http://your-domain:5001/auth/register \
 2. **Email not sending** - Verify SMTP_USER and SMTP_PASSWORD
 3. **JWT errors** - Ensure JWT_SECRET is set
 4. **Port conflicts** - Check if port 5001 is available
+5. **Rust/Cargo build errors** - Fixed by removing cryptography dependency and using bcrypt directly
+6. **Metadata generation failed** - Fixed with pyproject.toml configuration
 
 ### Logs:
 - Check application logs for detailed error messages
